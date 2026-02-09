@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Case Law Knowledge Management Bot - Indian Kanoon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .live-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-section h3 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .filter-option {
+            margin-bottom: 8px;
+        }
+
+        .filter-option label {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .filter-option label:hover {
+            background: #e9ecef;
+        }
+
+        .filter-option input {
+            margin-right: 8px;
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #ffffff;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .message.user .message-content {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: #f1f3f5;
+            color: #2c3e50;
+        }
+
+        .case-result {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+
+        .case-title {
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .case-citation {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .case-jurisdiction {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .case-summary {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #495057;
+            margin-top: 10px;
+        }
+
+        .view-source {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 8px;
+        }
+
+        .view-source:hover {
+            background: #34495e;
+        }
+
+        .view-source:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .source-text {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            display: none;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .relevance-score {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #userInput:focus {
+            border-color: #2c3e50;
+        }
+
+        #sendBtn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 24px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        #sendBtn:hover:not(:disabled) {
+            background: #34495e;
+        }
+
+        #sendBtn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .suggestions {
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .suggestion-chip {
+            display: inline-block;
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 16px;
+            margin: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .suggestion-chip:hover {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2c3e50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .external-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .external-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Legal Case Law Knowledge Management Bot</h1>
+            <p>Powered by Indian Kanoon - Real legal database with 4.5M+ documents</p>
+            <span class="live-badge">🔴 LIVE DATA</span>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="filter-section">
+                    <h3>🏛️ Jurisdiction Filter</h3>
+                    <div class="filter-option">
+                        <label>
+                            <input type="radio" name="jurisdiction" class="jurisdiction-filter" value="Supreme Court" checked>
+                            Supreme Court of India
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="radio" name="jurisdiction" class="jurisdiction-filter" value="Delhi High Court">
+                            Delhi High Court
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="radio" name="jurisdiction" class="jurisdiction-filter" value="Bombay High Court">
+                            Bombay High Court
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <label>
+                            <input type="radio" name="jurisdiction" class="jurisdiction-filter" value="All Courts">
+                            All Courts
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>📅 Year Range</h3>
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 12px; color: #6c757d;">From:</label>
+                        <input type="number" id="yearFrom" placeholder="2000" min="1950" max="2025" 
+                               style="width: 100%; padding: 6px; border: 1px solid #dee2e6; border-radius: 4px; margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #6c757d;">To:</label>
+                        <input type="number" id="yearTo" placeholder="2025" min="1950" max="2025" 
+                               style="width: 100%; padding: 6px; border: 1px solid #dee2e6; border-radius: 4px; margin-top: 4px;">
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>ℹ️ About</h3>
+                    <p style="font-size: 11px; color: #6c757d; line-height: 1.5;">
+                        This bot searches real cases from Indian Kanoon's database of Supreme Court, High Courts, and Tribunals.
+                    </p>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="messages" id="messages">
+                    <div class="message bot">
+                        <div class="message-content">
+                            <strong>👋 Welcome to Legal Case Law Knowledge Management Bot</strong><br><br>
+                            I can search <strong>real legal cases</strong> from Indian Kanoon database:<br>
+                            • Supreme Court judgments<br>
+                            • High Court decisions<br>
+                            • Tribunal orders<br>
+                            • Legal precedents<br><br>
+                            <div class="warning">
+                                ⚠️ <strong>Important:</strong> I provide information retrieval only. I cannot give legal advice, predict outcomes, or provide personalized legal counseling.
+                            </div>
+                            <div class="info">
+                                💡 <strong>Note:</strong> Results are fetched live from Indian Kanoon. Search may take a few seconds.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-container">
+                        <input type="text" id="userInput" placeholder="Search for real judgments and cases..." />
+                        <button id="sendBtn">Send</button>
+                    </div>
+                    <div class="suggestions">
+                        <strong style="font-size: 12px; color: #6c757d;">Try these queries:</strong><br>
+                        <span class="suggestion-chip" onclick="quickSearch('right to privacy')">Right to Privacy</span>
+                        <span class="suggestion-chip" onclick="quickSearch('article 21')">Article 21</span>
+                        <span class="suggestion-chip" onclick="quickSearch('section 498A')">Section 498A</span>
+                        <span class="suggestion-chip" onclick="quickSearch('habeas corpus')">Habeas Corpus</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let isSearching = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('userInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isSearching) sendMessage();
+            });
+        });
+
+        function quickSearch(query) {
+            document.getElementById('userInput').value = query;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            if (isSearching) return;
+            
+            const input = document.getElementById('userInput');
+            const query = input.value.trim();
+            
+            if (!query) return;
+
+            addMessage(query, 'user');
+            input.value = '';
+
+            // Check if query is asking for legal advice
+            if (isLegalAdviceQuery(query)) {
+                setTimeout(() => {
+                    const denialMessage = `
+                        <div class="warning">
+                            <strong>⚠️ Out of Scope Request Detected</strong><br><br>
+                            I cannot provide legal advice, predict case outcomes, or suggest litigation strategy.<br><br>
+                            <strong>What I can help with instead:</strong><br>
+                            • Finding relevant judgments and precedents<br>
+                            • Searching for applicable statutes and sections<br>
+                            • Providing case summaries and citations<br>
+                            • Explaining legal concepts based on cited sources<br><br>
+                            Would you like me to search for relevant case law on this topic instead?
+                        </div>
+                    `;
+                    addMessage(denialMessage, 'bot');
+                }, 500);
+                return;
+            }
+
+            // Show loading message
+            const loadingMsg = `<div class="info">🔍 Searching Indian Kanoon database...<span class="loading"></span></div>`;
+            addMessage(loadingMsg, 'bot');
+
+            // Search real cases
+            await searchRealCases(query);
+        }
+
+        function isLegalAdviceQuery(query) {
+            const adviceKeywords = [
+                'should i', 'what should', 'will i win', 'chances of winning', 
+                'what do you think', 'advice', 'recommend', 'suggest what',
+                'my case', 'help me with', 'what to do', 'how to proceed',
+                'will the court', 'predict', 'outcome', 'what actions',
+                'what steps', 'can i sue', 'should i sue', 'file a case',
+                'my husband', 'my wife', 'my employer', 'my landlord',
+                'against my', 'what can i do', 'how do i', 'help me',
+                'i want to', 'planning to', 'thinking of filing',
+                'is it worth', 'better option', 'win this', 'lose this',
+                'strategy', 'how to win', 'best way to', 'what action'
+            ];
+            
+            const lowerQuery = query.toLowerCase();
+            return adviceKeywords.some(keyword => lowerQuery.includes(keyword));
+        }
+
+        async function searchRealCases(query) {
+            isSearching = true;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Searching...';
+
+            try {
+                // Get filters
+                const jurisdiction = document.querySelector('input[name="jurisdiction"]:checked')?.value || 'All Courts';
+                const yearFrom = document.getElementById('yearFrom').value;
+                const yearTo = document.getElementById('yearTo').value;
+
+                const response = await fetch(`${API_URL}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        jurisdictions: jurisdiction !== 'All Courts' ? [jurisdiction] : [],
+                        year_from: yearFrom || null,
+                        year_to: yearTo || null
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Search failed');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.results && data.results.length > 0) {
+                    displayResults(data.results, query);
+                } else {
+                    const noResultsMsg = `
+                        <div class="info">
+                            <strong>📊 No results found</strong><br><br>
+                            Your search for "<em>${query}</em>" did not return any results from Indian Kanoon.<br><br>
+                            <strong>Suggestions:</strong><br>
+                            • Try different keywords or phrases<br>
+                            • Broaden your search terms<br>
+                            • Check the jurisdiction and year filters<br>
+                            • Use legal terminology (e.g., "Article 21" instead of "privacy law")
+                        </div>
+                    `;
+                    addMessage(noResultsMsg, 'bot');
+                }
+
+            } catch (error) {
+                console.error('Search error:', error);
+                const errorMsg = `
+                    <div class="error">
+                        <strong>❌ Search Error</strong><br><br>
+                        Unable to connect to the backend server. Please ensure:<br>
+                        • The Flask backend is running (python backend.py)<br>
+                        • The server is accessible at ${API_URL}<br><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                addMessage(errorMsg, 'bot');
+            } finally {
+                isSearching = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function displayResults(results, query) {
+            let message = `<div class="info"><strong>🔍 Found ${results.length} relevant result(s) from Indian Kanoon</strong></div>`;
+            
+            results.forEach((result, index) => {
+                const viewSourceBtn = result.url ? 
+                    `<button class="view-source" onclick="fetchSourceText('${result.url}', ${index})">Load Source Text</button>` : '';
+                
+                const indianKanoonLink = result.url ? 
+                    `<a href="${result.url}" target="_blank" class="external-link">View on Indian Kanoon ↗</a>` : '';
+                
+                message += `
+                    <div class="case-result">
+                        <div class="case-title">${index + 1}. ${result.title || 'Untitled Case'}</div>
+                        <div class="case-citation">📋 ${result.citation || 'Citation not available'}</div>
+                        <span class="case-jurisdiction">${result.jurisdiction || 'Unknown Court'}</span>
+                        <span class="case-jurisdiction">${result.year || 'Year N/A'}</span>
+                        <span class="relevance-score">Relevance: ${result.relevanceScore || 0}</span>
+                        <div class="case-summary">
+                            <strong>Summary:</strong> ${result.summary || 'Summary not available'}
+                        </div>
+                        ${viewSourceBtn}
+                        ${indianKanoonLink}
+                        <div class="source-text" id="source-${index}">
+                            <div class="loading"></div> Loading source text...
+                        </div>
+                    </div>
+                `;
+            });
+            
+            addMessage(message, 'bot');
+        }
+
+        async function fetchSourceText(caseUrl, index) {
+            const sourceDiv = document.getElementById(`source-${index}`);
+            
+            if (sourceDiv.style.display === 'block') {
+                sourceDiv.style.display = 'none';
+                return;
+            }
+
+            sourceDiv.style.display = 'block';
+            sourceDiv.innerHTML = '<div class="loading"></div> Fetching source text from Indian Kanoon...';
+
+            try {
+                const response = await fetch(`${API_URL}/case-details`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: caseUrl })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch case details');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.sourceText) {
+                    sourceDiv.innerHTML = `
+                        <strong>📜 Original Source Extract from Indian Kanoon:</strong><br><br>
+                        ${data.sourceText}
+                    `;
+                } else {
+                    sourceDiv.innerHTML = '<em>Source text not available</em>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching source text:', error);
+                sourceDiv.innerHTML = `<em>Error loading source text: ${error.message}</em>`;
+            }
+        }
+
+        function addMessage(content, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
